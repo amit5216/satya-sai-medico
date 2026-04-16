@@ -1,35 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaBars, FaTimes, FaPhoneAlt } from 'react-icons/fa';
+import { HeartPulse, Menu, X, Phone } from 'lucide-react';
 
 /**
- * ============================================================
- * NAVBAR COMPONENT — Top Navigation Bar
- * ============================================================
- * Features:
- * - Responsive (hamburger menu on mobile)
- * - Sticky on scroll with shadow effect
- * - Active link highlighting
- * - Call button for quick contact
+ * Public Navbar — Matches the template's clean header style.
+ * Sticky with backdrop blur, minimal design.
  */
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
 
-  // Detect scroll to add shadow to navbar
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile menu when route changes
-  useEffect(() => {
-    setIsOpen(false);
-  }, [location]);
+  useEffect(() => { setIsOpen(false); }, [location]);
 
   const navLinks = [
     { path: '/', label: 'Home' },
@@ -43,40 +31,29 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-lg'
-          : 'bg-white'
-      }`}
-    >
+    <nav className={`sticky top-0 z-50 border-b transition-all duration-300 ${
+      isScrolled ? 'bg-card/80 backdrop-blur-lg border-border' : 'bg-card border-border'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-18">
+        <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-heading font-bold text-lg shadow-md group-hover:shadow-lg transition-shadow">
-              S
+          <Link to="/" className="flex items-center gap-2">
+            <div className="p-1.5 bg-primary rounded-lg">
+              <HeartPulse className="h-5 w-5 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="font-heading font-bold text-lg text-dark leading-tight">
-                Satya Sai
-              </h1>
-              <p className="text-[0.65rem] text-primary font-semibold tracking-wider uppercase -mt-1">
-                Medico
-              </p>
-            </div>
+            <span className="font-semibold text-lg text-foreground">Satya Sai Medico</span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   isActive(link.path)
                     ? 'text-primary bg-primary/10'
-                    : 'text-gray hover:text-primary hover:bg-primary/5'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 {link.label}
@@ -84,55 +61,54 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* CTA Button + Mobile Toggle */}
+          {/* Right Actions */}
           <div className="flex items-center gap-3">
+            <Link to="/admin/login" className="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Sign in
+            </Link>
             <a
               href="tel:+917385312823"
-              className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+              className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
             >
-              <FaPhoneAlt className="text-xs" />
+              <Phone className="h-4 w-4" />
               Call Now
             </a>
 
-            {/* Hamburger */}
+            {/* Mobile Toggle */}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden p-2 rounded-lg text-gray hover:bg-gray-light transition-colors"
-              aria-label="Toggle menu"
+              className="md:hidden p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
             >
-              {isOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
+              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      <div
-        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-          isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        <div className="px-4 pb-4 pt-2 space-y-1 bg-white border-t border-gray-light/50">
+      <div className={`md:hidden overflow-hidden transition-all duration-300 ${
+        isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+      }`}>
+        <div className="px-4 pb-4 pt-2 space-y-1 border-t border-border">
           {navLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
-              className={`block px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 isActive(link.path)
-                  ? 'text-primary bg-primary/10 font-semibold'
-                  : 'text-gray hover:text-primary hover:bg-primary/5'
+                  ? 'text-primary bg-primary/10'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
             >
               {link.label}
             </Link>
           ))}
-          <a
-            href="tel:+917385312823"
-            className="flex items-center justify-center gap-2 mt-2 bg-gradient-to-r from-primary to-secondary text-white px-4 py-3 rounded-xl text-sm font-semibold"
+          <Link
+            to="/admin/login"
+            className="block px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
           >
-            <FaPhoneAlt className="text-xs" />
-            Call Now
-          </a>
+            Admin Login
+          </Link>
         </div>
       </div>
     </nav>

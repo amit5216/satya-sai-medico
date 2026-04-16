@@ -1,26 +1,22 @@
 import { Link } from 'react-router-dom';
-import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaWhatsapp, FaFacebook, FaInstagram, FaHeart } from 'react-icons/fa';
+import { HeartPulse, Phone, Mail, MapPin } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-dark text-white/80">
-      {/* Main Footer */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+    <footer className="bg-card border-t border-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
-          <div className="lg:col-span-1">
+          <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-heading font-bold text-lg">
-                S
+              <div className="p-1.5 bg-primary rounded-lg">
+                <HeartPulse className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
-                <h3 className="font-heading font-bold text-lg text-white">Satya Sai</h3>
-                <p className="text-[0.65rem] text-primary-light font-semibold tracking-wider uppercase -mt-1">Medico</p>
-              </div>
+              <span className="font-semibold text-lg text-foreground">Satya Sai Medico</span>
             </div>
-            <p className="text-sm text-white/60 leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Your trusted healthcare partner providing comprehensive medical services
               and wholesale pharmaceutical solutions.
             </p>
@@ -28,20 +24,17 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-heading font-semibold text-white mb-4 text-sm uppercase tracking-wider">Quick Links</h4>
-            <ul className="space-y-2">
+            <h4 className="font-semibold text-foreground mb-4 text-sm">Quick Links</h4>
+            <ul className="space-y-2.5">
               {[
                 { path: '/', label: 'Home' },
                 { path: '/services', label: 'Our Services' },
-                { path: '/doctors', label: 'Doctor Schedule' },
+                { path: '/doctors', label: 'Doctors' },
                 { path: '/medicines', label: 'Medicines' },
                 { path: '/appointment', label: 'Book Appointment' },
               ].map((link) => (
                 <li key={link.path}>
-                  <Link
-                    to={link.path}
-                    className="text-sm text-white/60 hover:text-primary-light transition-colors duration-200"
-                  >
+                  <Link to={link.path} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -51,66 +44,52 @@ const Footer = () => {
 
           {/* Services */}
           <div>
-            <h4 className="font-heading font-semibold text-white mb-4 text-sm uppercase tracking-wider">Services</h4>
-            <ul className="space-y-2">
-              {['Health Checkups', 'Pregnancy Care', 'Delivery Services', 'General Consultation', 'Wholesale Medicines'].map((service) => (
-                <li key={service}>
-                  <span className="text-sm text-white/60">{service}</span>
+            <h4 className="font-semibold text-foreground mb-4 text-sm">Services</h4>
+            <ul className="space-y-2.5">
+              {['Health Checkups', 'Pregnancy Care', 'Delivery Services', 'General Consultation', 'Wholesale Medicines'].map((s) => (
+                <li key={s}>
+                  <span className="text-sm text-muted-foreground">{s}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Contact Info */}
+          {/* Contact */}
           <div>
-            <h4 className="font-heading font-semibold text-white mb-4 text-sm uppercase tracking-wider">Contact Us</h4>
+            <h4 className="font-semibold text-foreground mb-4 text-sm">Contact Us</h4>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
-                <FaPhoneAlt className="text-primary-light text-sm mt-0.5 shrink-0" />
-                <a href="tel:+917385312823" className="text-sm text-white/60 hover:text-primary-light transition-colors">
+                <Phone className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <a href="tel:+917385312823" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   +91 73853 12823
                 </a>
               </li>
               <li className="flex items-start gap-3">
-                <FaEnvelope className="text-primary-light text-sm mt-0.5 shrink-0" />
-                <a href="mailto:info@satyasaimedico.com" className="text-sm text-white/60 hover:text-primary-light transition-colors">
+                <Mail className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <a href="mailto:info@satyasaimedico.com" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   info@satyasaimedico.com
                 </a>
               </li>
               <li className="flex items-start gap-3">
-                <FaMapMarkerAlt className="text-primary-light text-sm mt-0.5 shrink-0" />
-                <span className="text-sm text-white/60">
-                  Satya Sai Medico, India
-                </span>
+                <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <span className="text-sm text-muted-foreground">Satya Sai Medico, India</span>
               </li>
             </ul>
-
-            {/* Social Icons */}
-            <div className="flex items-center gap-3 mt-5">
-              <a href="https://wa.me/917385312823" target="_blank" rel="noopener noreferrer"
-                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-whatsapp/20 text-white/60 hover:text-whatsapp transition-all duration-200">
-                <FaWhatsapp size={16} />
-              </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-blue-500/20 text-white/60 hover:text-blue-400 transition-all duration-200">
-                <FaFacebook size={16} />
-              </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-pink-500/20 text-white/60 hover:text-pink-400 transition-all duration-200">
-                <FaInstagram size={16} />
-              </a>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-white/10">
+      {/* Bottom */}
+      <div className="border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs text-white/40">
+          <p className="text-xs text-muted-foreground">
             © {currentYear} Satya Sai Medico. All rights reserved.
           </p>
-          <p className="text-xs text-white/40 flex items-center gap-1">
-            Made with <FaHeart className="text-danger text-[0.6rem]" /> for better healthcare
-          </p>
+          <div className="flex items-center gap-6 text-xs text-muted-foreground">
+            <Link to="/doctors" className="hover:text-foreground transition-colors">Doctors</Link>
+            <Link to="/medicines" className="hover:text-foreground transition-colors">Medicines</Link>
+            <Link to="/admin/login" className="hover:text-foreground transition-colors">Admin</Link>
+          </div>
         </div>
       </div>
     </footer>

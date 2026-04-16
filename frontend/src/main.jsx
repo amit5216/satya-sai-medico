@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
 import './index.css'
 import App from './App.jsx'
 
@@ -9,21 +10,29 @@ import App from './App.jsx'
  * MAIN ENTRY POINT — React Application
  * ============================================================
  *
- * WHAT'S HAPPENING HERE:
- * 1. createRoot() — Creates a React root on the DOM element with id="root"
- * 2. StrictMode — Helps find potential problems during development
- *    (double-renders components to detect side effects)
- * 3. BrowserRouter — Enables client-side routing (SPA navigation)
- *    Without this, react-router-dom won't work.
+ * COMPONENT TREE:
+ *   StrictMode         → Development warnings
+ *     BrowserRouter    → Enables client-side routing
+ *       AuthProvider   → Global auth state (JWT token, user info)
+ *         App          → Routes + Layout
  *
- * WHY BrowserRouter HERE (not in App.jsx)?
- * The router must wrap the ENTIRE app so that all components
- * can use routing hooks like useNavigate(), useParams(), etc.
+ * 🎓 WHY AuthProvider WRAPS App?
+ * AuthProvider uses React Context to share auth state.
+ * It must wrap ALL components that need auth access.
+ * Since both public pages (Navbar login link) and admin pages
+ * (ProtectedRoute, AdminLayout) need auth, we wrap at the top.
+ *
+ * 🎓 WHY AuthProvider INSIDE BrowserRouter?
+ * AuthProvider might use useNavigate() in the future for
+ * auto-redirect on token expiry. useNavigate() only works
+ * inside a Router context.
  */
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 )
