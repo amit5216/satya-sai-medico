@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
+import { Toaster } from 'react-hot-toast'
 import './index.css'
 import App from './App.jsx'
 
@@ -13,14 +15,20 @@ import App from './App.jsx'
  * COMPONENT TREE:
  *   StrictMode         → Development warnings
  *     BrowserRouter    → Enables client-side routing
- *       AuthProvider   → Global auth state (JWT token, user info)
- *         App          → Routes + Layout
+ *       ThemeProvider  → Dark/light mode state + class toggle
+ *         AuthProvider → Global auth state (JWT token, user info)
+ *           App        → Routes + Layout
+ *           Toaster    → Global toast notifications
  *
- * 🎓 WHY AuthProvider WRAPS App?
- * AuthProvider uses React Context to share auth state.
- * It must wrap ALL components that need auth access.
- * Since both public pages (Navbar login link) and admin pages
- * (ProtectedRoute, AdminLayout) need auth, we wrap at the top.
+ * 🎓 PROVIDER ORDER MATTERS:
+ * 1. BrowserRouter → outermost (routing context)
+ * 2. ThemeProvider → before auth (theme doesn't depend on auth)
+ * 3. AuthProvider  → innermost (may use navigation in future)
+ *
+ * 🎓 WHY TOASTER AT ROOT?
+ * Toast notifications can be triggered from ANY component (login
+ * errors, CRUD success messages, etc.). Placing <Toaster /> at
+ * root ensures it's always rendered and catches all toast calls.
  *
  * 🎓 WHY AuthProvider INSIDE BrowserRouter?
  * AuthProvider might use useNavigate() in the future for
@@ -30,9 +38,31 @@ import App from './App.jsx'
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <App />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: 'var(--card)',
+                color: 'var(--card-foreground)',
+                border: '1px solid var(--border)',
+                borderRadius: '0.75rem',
+                fontSize: '0.875rem',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)',
+              },
+              success: {
+                iconTheme: { primary: '#10B981', secondary: '#fff' },
+              },
+              error: {
+                iconTheme: { primary: '#EF4444', secondary: '#fff' },
+              },
+            }}
+          />
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </StrictMode>,
 )
