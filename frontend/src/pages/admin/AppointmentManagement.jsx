@@ -1,112 +1,161 @@
-import { useEffect, useState } from 'react';
-import { Clock, CheckCircle2, XCircle, Check, ArrowUpRight } from 'lucide-react';
+import { useState } from 'react';
+import { Clock, CheckCircle2, XCircle, Check, Calendar } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { useDataFetch } from '../../hooks/useDataFetch';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Card, CardContent } from '../../components/ui/card';
+import { AdminPageHeader } from '../../components/admin/admin-header';
+import { Skeleton } from '../../components/ui/skeleton';
+import { EmptyState } from '../../components/ui/empty-state';
+import { cn } from '../../lib/utils';
 
+/**
+ * ============================================================
+ * APPOINTMENT MANAGEMENT — Status-driven card layout
+ * ============================================================
+ *
+ * 🎓 WHY CARD LAYOUT INSTEAD OF TABLE?
+ * Appointments have more context (patient, doctor, date, status,
+ * actions) than fits well in a table row. Card layout allows
+ * richer information display with action buttons inline.
+ *
+ * 🎓 INTERVIEW: "How do you handle appointment status updates?"
+ * → "Status changes go through PUT /api/admin/appointments/{id}/status.
+ *    The backend validates the transition (e.g., only PENDING→CONFIRMED
+ *    or CONFIRMED→COMPLETED). On success, I show a toast notification
+ *    and refetch the data. The UI uses filter tabs for status-based views."
+ */
 const AppointmentManagement = () => {
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: appointments, loading, refetch } = useDataFetch('/admin/appointments');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  useEffect(() => { fetchAppointments(); }, []);
-
-  const fetchAppointments = async () => {
-    try { const res = await api.get('/admin/appointments'); setAppointments(res.data); }
-    catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  };
-
   const updateStatus = async (id, newStatus) => {
-    try { await api.put(`/admin/appointments/${id}/status`, { status: newStatus }); fetchAppointments(); }
-    catch (err) { alert('Failed to update status'); }
+    try {
+      await api.put(`/admin/appointments/${id}/status`, { status: newStatus });
+      toast.success(`Appointment ${newStatus.toLowerCase()}`);
+      refetch();
+    } catch (err) {
+      toast.error('Failed to update status');
+    }
   };
 
   const statusConfig = {
-    PENDING: { icon: Clock, color: 'text-primary', bg: 'bg-primary/10', label: 'Pending' },
-    CONFIRMED: { icon: Check, color: 'text-chart-3', bg: 'bg-chart-3/10', label: 'Confirmed' },
-    COMPLETED: { icon: CheckCircle2, color: 'text-secondary', bg: 'bg-secondary/10', label: 'Completed' },
-    CANCELLED: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10', label: 'Cancelled' },
+    PENDING:   { icon: Clock,        color: 'text-primary',     bg: 'bg-primary/10',     label: 'Pending',   variant: 'default' },
+    CONFIRMED: { icon: Check,        color: 'text-chart-3',     bg: 'bg-chart-3/10',     label: 'Confirmed', variant: 'warning' },
+    COMPLETED: { icon: CheckCircle2, color: 'text-secondary',   bg: 'bg-secondary/10',   label: 'Completed', variant: 'success' },
+    CANCELLED: { icon: XCircle,      color: 'text-destructive', bg: 'bg-destructive/10', label: 'Cancelled', variant: 'destructive' },
   };
 
   const filtered = statusFilter === 'ALL' ? appointments : appointments.filter(a => a.status === statusFilter);
   const sorted = [...filtered].sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate));
 
-  if (loading) return <div className="flex justify-center h-64 items-center"><div className="h-8 w-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" /></div>;
+  if (loading) {
+    return (
+      <div>
+        <Skeleton className="h-8 w-64 mb-6" />
+        <div className="flex gap-2 mb-6">
+          {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-10 w-32 rounded-lg" />)}
+        </div>
+        <div className="space-y-3">
+          {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className="mb-6">
-        <p className="text-sm text-muted-foreground">{appointments.length} total appointments</p>
-      </div>
+      <AdminPageHeader
+        description={`${appointments.length} total appointments`}
+      />
 
-      {/* Status Filters */}
+      {/* Status Filter Tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
         {['ALL', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'].map((status) => {
           const count = status === 'ALL' ? appointments.length : appointments.filter(a => a.status === status).length;
           return (
-            <button
+            <Button
               key={status}
+              variant={statusFilter === status ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setStatusFilter(status)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                statusFilter === status
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card border border-border text-foreground hover:bg-muted'
-              }`}
+              className="gap-1.5"
             >
-              {status === 'ALL' ? 'All' : statusConfig[status]?.label} ({count})
-            </button>
+              {status === 'ALL' ? 'All' : statusConfig[status]?.label}
+              <span className={cn(
+                'px-1.5 py-0.5 rounded-full text-xs',
+                statusFilter === status ? 'bg-primary-foreground/20' : 'bg-muted'
+              )}>
+                {count}
+              </span>
+            </Button>
           );
         })}
       </div>
 
-      {/* Appointment List */}
+      {/* Appointment Cards */}
       <div className="flex flex-col gap-3">
         {sorted.map((appt) => {
           const config = statusConfig[appt.status] || statusConfig.PENDING;
           const Icon = config.icon;
           return (
-            <div key={appt.id} className="bg-card border border-border rounded-xl p-5 hover:shadow-sm hover:border-primary/20 transition-all">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className={`p-2 rounded-lg ${config.bg}`}>
-                    <Icon className={`h-5 w-5 ${config.color}`} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.color}`}>
-                        {config.label}
-                      </span>
-                      <span className="text-xs text-muted-foreground">#{appt.id}</span>
+            <Card key={appt.id} className="hover:shadow-sm hover:border-primary/20 transition-all">
+              <CardContent className="p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className={`p-2.5 rounded-xl ${config.bg}`}>
+                      <Icon className={`h-5 w-5 ${config.color}`} />
                     </div>
-                    <p className="font-medium text-foreground">{appt.patient?.name || 'Unknown'}</p>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="text-primary font-medium">{appt.doctor?.name}</span>
-                      {appt.doctor?.specialization && ` · ${appt.doctor.specialization}`}
-                    </p>
-                    <div className="flex gap-4 mt-1.5 text-xs text-muted-foreground">
-                      <span>📅 {appt.appointmentDate}</span>
-                      <span>📱 {appt.patient?.mobile || '—'}</span>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant={config.variant}>{config.label}</Badge>
+                        <span className="text-xs text-muted-foreground font-mono">#{appt.id}</span>
+                      </div>
+                      <p className="font-medium text-foreground">{appt.patient?.name || 'Unknown'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        <span className="text-primary font-medium">{appt.doctor?.name}</span>
+                        {appt.doctor?.specialization && ` · ${appt.doctor.specialization}`}
+                      </p>
+                      <div className="flex gap-4 mt-1.5 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {appt.appointmentDate}</span>
+                        <span>📱 {appt.patient?.mobile || '—'}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2">
-                  {appt.status === 'PENDING' && (
-                    <>
-                      <button onClick={() => updateStatus(appt.id, 'CONFIRMED')} className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors">Confirm</button>
-                      <button onClick={() => updateStatus(appt.id, 'CANCELLED')} className="px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-colors">Cancel</button>
-                    </>
-                  )}
-                  {appt.status === 'CONFIRMED' && (
-                    <button onClick={() => updateStatus(appt.id, 'COMPLETED')} className="px-3 py-1.5 rounded-lg bg-secondary/10 text-secondary text-xs font-medium hover:bg-secondary/20 transition-colors">Complete</button>
-                  )}
+                  {/* Status Actions */}
+                  <div className="flex items-center gap-2">
+                    {appt.status === 'PENDING' && (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => updateStatus(appt.id, 'CONFIRMED')} className="text-primary border-primary/30 hover:bg-primary/10">
+                          Confirm
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => updateStatus(appt.id, 'CANCELLED')} className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                    {appt.status === 'CONFIRMED' && (
+                      <Button size="sm" variant="outline" onClick={() => updateStatus(appt.id, 'COMPLETED')} className="text-secondary border-secondary/30 hover:bg-secondary/10">
+                        Complete
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           );
         })}
         {sorted.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground bg-card border border-border rounded-xl">No appointments found.</div>
+          <Card>
+            <EmptyState
+              icon={Calendar}
+              title="No appointments found"
+              description={statusFilter !== 'ALL' ? `No ${statusFilter.toLowerCase()} appointments.` : 'Appointments will appear here.'}
+            />
+          </Card>
         )}
       </div>
     </div>
