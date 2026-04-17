@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { HeartPulse, Baby, Stethoscope, User, FlaskConical, Building2 } from 'lucide-react';
+import { Card, CardContent } from '../components/ui/card';
+import { Skeleton } from '../components/ui/skeleton';
 import api from '../services/api';
 
+/**
+ * ============================================================
+ * SERVICES PAGE — Public-facing service catalog
+ * ============================================================
+ */
 const Services = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,8 +40,9 @@ const Services = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <section className="bg-primary text-primary-foreground py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="bg-primary text-primary-foreground py-16 md:py-20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.08),transparent_50%)]" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
           <h1 className="text-3xl md:text-5xl font-bold">Our Services</h1>
           <p className="text-primary-foreground/80 mt-4 max-w-2xl mx-auto text-lg">
             Comprehensive healthcare solutions tailored for you and your family
@@ -47,9 +55,14 @@ const Services = () => {
           {loading ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1,2,3,4,5,6].map(i => (
-                <div key={i} className="bg-card border border-border rounded-xl p-8 animate-pulse">
-                  <div className="w-14 h-14 bg-muted rounded-xl mb-6" /><div className="h-6 bg-muted rounded w-3/4 mb-3" /><div className="h-4 bg-muted rounded w-full mb-2" /><div className="h-4 bg-muted rounded w-5/6" />
-                </div>
+                <Card key={i}>
+                  <CardContent className="p-8">
+                    <Skeleton className="w-14 h-14 rounded-xl mb-6" />
+                    <Skeleton className="h-6 w-3/4 mb-3" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : (
@@ -58,13 +71,18 @@ const Services = () => {
                 const Icon = iconMap[index % iconMap.length];
                 const color = colorMap[index % colorMap.length];
                 return (
-                  <div key={service.id} className="bg-card border border-border rounded-2xl p-8 hover:shadow-md hover:border-primary/20 transition-all">
-                    <div className={`w-14 h-14 rounded-xl ${color.bg} flex items-center justify-center mb-6`}>
-                      <Icon className={`h-7 w-7 ${color.icon}`} />
-                    </div>
-                    <h3 className="font-semibold text-xl text-foreground mb-3">{service.name}</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">{service.description}</p>
-                  </div>
+                  <Card
+                    key={service.id}
+                    className="hover:shadow-lg hover:border-primary/20 transition-all group"
+                  >
+                    <CardContent className="p-8">
+                      <div className={`w-14 h-14 rounded-xl ${color.bg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                        <Icon className={`h-7 w-7 ${color.icon}`} />
+                      </div>
+                      <h3 className="font-semibold text-xl text-foreground mb-3">{service.name}</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">{service.description}</p>
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>
