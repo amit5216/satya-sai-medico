@@ -1,7 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Search, Pill, MessageCircle } from 'lucide-react';
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Skeleton } from '../components/ui/skeleton';
+import { EmptyState } from '../components/ui/empty-state';
+import { cn } from '../lib/utils';
 import api from '../services/api';
 
+/**
+ * ============================================================
+ * MEDICINES PAGE — Public catalog with WhatsApp inquiry
+ * ============================================================
+ */
 const WHATSAPP_NUMBER = '917385312823';
 
 const Medicines = () => {
@@ -36,8 +48,9 @@ const Medicines = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <section className="bg-primary text-primary-foreground py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="bg-primary text-primary-foreground py-16 md:py-20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.08),transparent_50%)]" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
           <h1 className="text-3xl md:text-5xl font-bold">Wholesale Medicines</h1>
           <p className="text-primary-foreground/80 mt-4 max-w-2xl mx-auto text-lg">
             Quality pharmaceutical products at wholesale prices. Contact us for pricing.
@@ -51,19 +64,24 @@ const Medicines = () => {
           <div className="flex flex-col sm:flex-row gap-4 mb-10">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text" placeholder="Search medicines..."
-                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
+              <Input
+                placeholder="Search medicines..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
               />
             </div>
             {categories.length > 1 && (
               <div className="flex flex-wrap gap-2">
                 {categories.map(cat => (
-                  <button key={cat} onClick={() => setActiveCategory(cat)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      activeCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground hover:bg-muted'
-                    }`}>{cat}</button>
+                  <Button
+                    key={cat}
+                    variant={activeCategory === cat ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setActiveCategory(cat)}
+                  >
+                    {cat}
+                  </Button>
                 ))}
               </div>
             )}
@@ -73,54 +91,75 @@ const Medicines = () => {
           {loading ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1,2,3,4,5,6].map(i => (
-                <div key={i} className="bg-card border border-border rounded-xl p-6 animate-pulse">
-                  <div className="h-40 bg-muted rounded-lg mb-4" /><div className="h-5 bg-muted rounded w-3/4 mb-2" /><div className="h-4 bg-muted rounded w-full mb-4" /><div className="h-10 bg-muted rounded-lg" />
-                </div>
+                <Card key={i}>
+                  <CardContent className="p-0">
+                    <Skeleton className="h-44 w-full rounded-t-xl rounded-b-none" />
+                    <div className="p-5 space-y-2">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-10 w-full rounded-lg mt-3" />
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayMedicines.map((med) => (
-                <div key={med.id} className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-md hover:border-primary/20 transition-all">
-                  <div className="h-44 bg-muted flex items-center justify-center">
-                    {med.imageUrl ? <img src={med.imageUrl} alt={med.name} className="w-full h-full object-cover" /> : <Pill className="h-12 w-12 text-muted-foreground/30" />}
+                <Card key={med.id} className="overflow-hidden hover:shadow-lg hover:border-primary/20 transition-all group">
+                  <div className="h-44 bg-muted flex items-center justify-center overflow-hidden">
+                    {med.imageUrl ? (
+                      <img src={med.imageUrl} alt={med.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <Pill className="h-12 w-12 text-muted-foreground/30" />
+                    )}
                   </div>
-                  <div className="p-5">
-                    {med.category && <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-2">{med.category}</span>}
+                  <CardContent className="p-5">
+                    {med.category && (
+                      <Badge variant="default" className="mb-2">{med.category}</Badge>
+                    )}
                     <h3 className="font-semibold text-foreground mb-1">{med.name}</h3>
                     <p className="text-muted-foreground text-sm mb-4">{med.description}</p>
-                    <a href={getWhatsAppLink(med.name)} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full bg-secondary text-secondary-foreground font-medium py-2.5 rounded-lg hover:bg-secondary/90 transition-colors text-sm">
-                      <MessageCircle className="h-4 w-4" /> Contact for Price
+                    <a href={getWhatsAppLink(med.name)} target="_blank" rel="noopener noreferrer">
+                      <Button variant="secondary" className="w-full">
+                        <MessageCircle className="h-4 w-4" /> Contact for Price
+                      </Button>
                     </a>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
 
           {displayMedicines.length === 0 && !loading && (
-            <div className="text-center py-16 bg-card border border-border rounded-xl">
-              <Pill className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="font-semibold text-foreground text-lg">No Medicines Found</h3>
-              <p className="text-muted-foreground text-sm mt-2">Try a different search or category</p>
-            </div>
+            <Card>
+              <EmptyState
+                icon={Pill}
+                title="No Medicines Found"
+                description="Try a different search or category"
+              />
+            </Card>
           )}
 
           {/* WhatsApp CTA */}
-          <div className="mt-12 bg-secondary/10 border border-secondary/20 rounded-xl p-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div>
-                <h3 className="text-xl font-bold text-foreground">Need Bulk Orders?</h3>
-                <p className="text-muted-foreground text-sm mt-1">Contact us on WhatsApp for wholesale pricing</p>
+          <Card className="mt-12 border-secondary/20 bg-secondary/5">
+            <CardContent className="p-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div>
+                  <h3 className="text-xl font-bold text-foreground">Need Bulk Orders?</h3>
+                  <p className="text-muted-foreground text-sm mt-1">Contact us on WhatsApp for wholesale pricing</p>
+                </div>
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hello, I am interested in wholesale medicine pricing')}`}
+                  target="_blank" rel="noopener noreferrer"
+                >
+                  <Button variant="secondary" size="lg">
+                    <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
+                  </Button>
+                </a>
               </div>
-              <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hello, I am interested in wholesale medicine pricing')}`}
-                target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground font-medium px-6 py-3 rounded-lg hover:bg-secondary/90 transition-colors shrink-0">
-                <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
-              </a>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>

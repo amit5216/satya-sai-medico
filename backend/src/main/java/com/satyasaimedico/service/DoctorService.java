@@ -109,6 +109,16 @@ public class DoctorService {
         doctorRepository.save(doctor);
     }
 
+    public Doctor uploadPhoto(Long id, org.springframework.web.multipart.MultipartFile file,
+                              FileStorageService fileStorageService) throws java.io.IOException {
+        Doctor doctor = getDoctorById(id);
+        // Delete old photo if exists
+        fileStorageService.deleteFile(doctor.getImageUrl());
+        String url = fileStorageService.saveFile(file);
+        doctor.setImageUrl(url);
+        return doctorRepository.save(doctor);
+    }
+
     /**
      * Search doctors by name.
      */

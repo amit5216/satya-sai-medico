@@ -9,19 +9,24 @@ import com.satyasaimedico.repository.AppointmentRepository;
 import com.satyasaimedico.repository.DoctorRepository;
 import com.satyasaimedico.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.format.DateTimeFormatter;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
+    private final SmsService smsService;
 
     /**
      * Book an appointment.
@@ -98,8 +103,27 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "Appointment not found with id: " + id));
-        appointment.setStatus(status.toUpperCase());
-        return appointmentRepository.save(appointment);
+
+        String newStatus = status.toUpperCase();
+        appointment.setStatus(newStatus);
+        Appointment saved = appointmentRepository.save(appointment);
+
+        // Send SMS on CONFIRMED or CANCELLED
+        if ("CONFIRMED".equals(newStatus)) {
+            String mobile = saved.getPatient().getMobile();
+            String doctorName = saved.getDoctor().getName();
+            String date = saved.getAppointmentDate()
+                .format(DateTimeFormatter.ofPattern("dd-MMM-yyyy"));
+            smsService.sendAppointmentConfirmation(mobile, saved.getId(), doctorName, date);
+        } else if ("CANCELLED".equals(newStatus)) {
+            String mobile = saved.getPatient().getMobile();
+            String doctorName = saved.getDoctor().getName();
+            String date = saved.getAppointmentDate()
+                .format(DateTimeFormatter.ofPattern("dd-MMM-yyyy"));
+            smsService.sendAppointmentCancellation(mobile, saved.getId(), doctorName, date);
+        }
+
+        return saved;
     }
 
     /**

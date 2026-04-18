@@ -3,12 +3,15 @@ package com.satyasaimedico.controller;
 import com.satyasaimedico.dto.DoctorDTO;
 import com.satyasaimedico.model.Doctor;
 import com.satyasaimedico.service.DoctorService;
+import com.satyasaimedico.service.FileStorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -42,6 +45,7 @@ import java.util.List;
 public class DoctorController {
 
     private final DoctorService doctorService;
+    private final FileStorageService fileStorageService;
 
     // ==================== PUBLIC ENDPOINTS ====================
 
@@ -111,5 +115,15 @@ public class DoctorController {
     public ResponseEntity<Void> deleteDoctor(@PathVariable Long id) {
         doctorService.deleteDoctor(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * POST /api/admin/doctors/{id}/photo → Upload doctor photo
+     */
+    @PostMapping("/admin/doctors/{id}/photo")
+    public ResponseEntity<Doctor> uploadPhoto(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        return ResponseEntity.ok(doctorService.uploadPhoto(id, file, fileStorageService));
     }
 }

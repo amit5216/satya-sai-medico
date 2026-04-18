@@ -1,18 +1,46 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import {
   HeartPulse, LayoutDashboard, Users, Stethoscope,
   Calendar, Pill, Settings, LogOut, ChevronLeft,
-  ChevronRight, Bell, User, Search, Menu, X, ArrowLeft
+  ChevronRight, Bell, User, Search, Menu, X, ArrowLeft,
+  Sun, Moon
 } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { cn } from '../lib/utils';
 
 /**
- * Admin Layout — Collapsible Sidebar + Top Header + Content
- * Matches the shadcn/ui template design system.
+ * ============================================================
+ * ADMIN LAYOUT — Sidebar + Header + Content Shell
+ * ============================================================
+ *
+ * 🎓 LAYOUT ARCHITECTURE:
+ * ┌──────────┬───────────────────────────────────────┐
+ * │          │  Header (sticky, search, user menu)   │
+ * │ Sidebar  ├───────────────────────────────────────┤
+ * │ (fixed,  │                                       │
+ * │  dark,   │  <Outlet />  (page content)           │
+ * │  collaps)│                                       │
+ * └──────────┴───────────────────────────────────────┘
+ *
+ * 🎓 WHY FIXED SIDEBAR?
+ * Fixed positioning keeps the sidebar visible during scroll.
+ * The main content uses padding-left to offset for the sidebar width.
+ * On mobile, it becomes a slide-in drawer with overlay.
+ *
+ * 🎓 INTERVIEW: "How is the admin layout structured?"
+ * → "The AdminLayout uses a fixed dark sidebar with collapsible state,
+ *    a sticky top header with search and user menu, and an <Outlet />
+ *    for child route content. Mobile uses a drawer pattern with
+ *    backdrop overlay. The sidebar state is local since it doesn't
+ *    need to be shared globally."
  */
 const AdminLayout = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
@@ -49,16 +77,18 @@ const AdminLayout = () => {
       {/* ── Mobile Sidebar Overlay ── */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden animate-in fade-in"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* ── Sidebar ── */}
       <aside
-        className={`fixed left-0 top-0 z-50 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 flex flex-col ${
-          collapsed ? 'w-[70px]' : 'w-64'
-        } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={cn(
+          'fixed left-0 top-0 z-50 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 flex flex-col',
+          collapsed ? 'w-[70px]' : 'w-64',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        )}
       >
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
@@ -97,11 +127,12 @@ const AdminLayout = () => {
                 <Link
                   to={item.path}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                     isActive(item.path)
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                      ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
                       : 'text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent'
-                  }`}
+                  )}
                 >
                   <item.icon className="h-5 w-5 flex-shrink-0" />
                   {!collapsed && <span>{item.label}</span>}
@@ -137,17 +168,22 @@ const AdminLayout = () => {
       </aside>
 
       {/* ── Main Content Area ── */}
-      <div className={`transition-all duration-300 ${collapsed ? 'lg:pl-[70px]' : 'lg:pl-64'}`}>
+      <div className={cn(
+        'transition-all duration-300',
+        collapsed ? 'lg:pl-[70px]' : 'lg:pl-64'
+      )}>
         {/* Top Header */}
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 sticky top-0 z-30">
+        <header className="h-16 border-b border-border bg-card/80 backdrop-blur-lg flex items-center justify-between px-6 sticky top-0 z-30">
           <div className="flex items-center gap-4">
             {/* Mobile menu toggle */}
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+              className="lg:hidden"
             >
               <Menu className="h-5 w-5" />
-            </button>
+            </Button>
             <div>
               <h1 className="text-xl font-semibold text-foreground">{getPageTitle()}</h1>
               <p className="text-sm text-muted-foreground hidden sm:block">
@@ -156,21 +192,36 @@ const AdminLayout = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Search */}
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
+              <Input
                 placeholder="Search..."
-                className="w-64 pl-9 pr-4 py-2 bg-muted/50 border-0 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-64 pl-9 bg-muted/50 border-0"
               />
             </div>
 
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="text-muted-foreground hover:text-foreground"
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+
             {/* Notifications */}
-            <button className="relative p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative text-muted-foreground hover:text-foreground"
+            >
               <Bell className="h-5 w-5" />
               <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-secondary rounded-full" />
-            </button>
+            </Button>
 
             {/* User Menu */}
             <div className="relative">
@@ -186,18 +237,27 @@ const AdminLayout = () => {
               {userMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-                  <div className="absolute right-0 top-12 z-50 w-56 bg-popover border border-border rounded-lg shadow-lg py-1">
-                    <div className="px-3 py-2 border-b border-border">
+                  <div className="absolute right-0 top-12 z-50 w-56 bg-popover border border-border rounded-xl shadow-lg py-1 fade-in">
+                    <div className="px-3 py-2.5 border-b border-border">
                       <p className="text-sm font-medium">{user?.username || 'Admin'}</p>
                       <p className="text-xs text-muted-foreground">{user?.role || 'ADMIN'}</p>
                     </div>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-muted transition-colors"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Sign out
-                    </button>
+                    <div className="p-1">
+                      <button
+                        onClick={toggleTheme}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted rounded-lg transition-colors"
+                      >
+                        {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                        {isDark ? 'Light Mode' : 'Dark Mode'}
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-muted rounded-lg transition-colors"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Sign out
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
@@ -205,8 +265,8 @@ const AdminLayout = () => {
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="p-6">
+        {/* Page Content — animate in for smooth transitions */}
+        <main className="p-6 fade-in-up">
           <Outlet />
         </main>
       </div>

@@ -1,12 +1,35 @@
 /* ============================================================
    TAILWIND CSS v4 + DESIGN SYSTEM
    Inspired by shadcn/ui with oklch color space
+   ============================================================
+
+   🎓 DESIGN SYSTEM ARCHITECTURE:
+   This file is the SINGLE SOURCE OF TRUTH for all visual tokens.
+   Every component uses these CSS variables, never hardcoded colors.
+
+   🎓 WHY oklch?
+   oklch is a perceptually uniform color space. Unlike hex/rgb,
+   changing lightness in oklch produces visually consistent results.
+   This makes it ideal for generating accessible color palettes.
+
+   🎓 WHY CSS Variables (not Tailwind config)?
+   CSS variables enable runtime theme switching (dark mode)
+   without rebuilding CSS. Tailwind's @theme mapping connects
+   these variables to utility classes (bg-primary, text-foreground, etc.)
+
+   🎓 HOW DARK MODE WORKS:
+   1. ThemeContext adds/removes 'dark' class on <html>
+   2. @custom-variant dark(.dark *) tells Tailwind to match .dark ancestor
+   3. .dark {} block overrides all CSS variables with dark values
+   4. Components using bg-background, text-foreground etc auto-switch
    ============================================================ */
 @import "tailwindcss";
 
+/* Enable Tailwind's dark variant via class */
+@custom-variant dark (&:is(.dark *));
+
 /* ============================================================
-   CSS VARIABLES — shadcn/ui Design Token System
-   Using oklch color space for perceptual uniformity
+   LIGHT THEME — CSS Variables
    ============================================================ */
 :root {
   /* Healthcare Blue Primary */
@@ -65,6 +88,63 @@
 }
 
 /* ============================================================
+   DARK THEME — CSS Variables
+   ============================================================
+
+   🎓 INTERVIEW: "How does your dark mode work technically?"
+   → "I define two sets of CSS variables — :root for light and
+      .dark for dark. The ThemeContext toggles the 'dark' class
+      on <html>. Every Tailwind utility like bg-background reads
+      the CSS variable, so all components switch automatically
+      without any per-component logic."
+   ============================================================ */
+.dark {
+  --background: oklch(0.145 0.015 260);
+  --foreground: oklch(0.985 0 0);
+
+  --card: oklch(0.18 0.015 260);
+  --card-foreground: oklch(0.985 0 0);
+
+  --popover: oklch(0.18 0.015 260);
+  --popover-foreground: oklch(0.985 0 0);
+
+  --primary: oklch(0.6 0.245 264);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.696 0.17 162);
+  --secondary-foreground: oklch(1 0 0);
+
+  --muted: oklch(0.25 0.015 260);
+  --muted-foreground: oklch(0.708 0 0);
+
+  --accent: oklch(0.25 0.015 260);
+  --accent-foreground: oklch(0.985 0 0);
+
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(0.3 0.015 260);
+  --input: oklch(0.3 0.015 260);
+  --ring: oklch(0.6 0.245 264);
+
+  --chart-1: oklch(0.6 0.245 264);
+  --chart-2: oklch(0.696 0.17 162);
+  --chart-3: oklch(0.769 0.188 70);
+  --chart-4: oklch(0.627 0.265 303);
+  --chart-5: oklch(0.645 0.246 16);
+
+  --sidebar: oklch(0.12 0.015 260);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.6 0.245 264);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.2 0.015 260);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.25 0.015 260);
+  --sidebar-ring: oklch(0.6 0.245 264);
+  --sidebar-muted: oklch(0.55 0.01 260);
+}
+
+/* ============================================================
    TAILWIND THEME MAPPING
    Maps CSS variables to Tailwind utility classes
    e.g., bg-primary, text-foreground, border-border
@@ -109,6 +189,12 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Animation tokens */
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-fade-in-up: fade-in-up 0.4s ease-out;
+  --animate-scale-in: scale-in 0.2s ease-out;
+  --animate-slide-in-left: slide-in-left 0.3s ease-out;
 }
 
 /* ============================================================
@@ -128,6 +214,75 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+}
+
+/* ============================================================
+   ANIMATION KEYFRAMES
+   Used by Dialog, Skeleton, page transitions
+   ============================================================ */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+/* Utility classes for animations */
+.animate-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.4s ease-out;
+}
+
+.zoom-in-95 {
+  animation: scale-in 0.2s ease-out;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
 }
 
 /* ============================================================
@@ -152,4 +307,34 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted-foreground);
+}
+
+/* ============================================================
+   CUSTOM UTILITY CLASSES
+   ============================================================ */
+
+/* Glassmorphism effect for premium cards */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(30, 30, 40, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Gradient text */
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Focus ring visible only on keyboard navigation */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50;
 }

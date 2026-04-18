@@ -99,6 +99,15 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- ==================== TWILIO SMS ==================== -->
+
+        <!-- Twilio Java SDK: Official library for sending SMS via Twilio API -->
+        <dependency>
+            <groupId>com.twilio.sdk</groupId>
+            <artifactId>twilio</artifactId>
+            <version>10.1.0</version>
+        </dependency>
+
         <!-- ==================== UTILITIES ==================== -->
 
         <!-- Lombok: Eliminates boilerplate code.

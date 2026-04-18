@@ -1,153 +1,251 @@
-import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Plus, Pencil, Trash2, Stethoscope, Camera } from 'lucide-react';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { useDataFetch } from '../../hooks/useDataFetch';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Input, Textarea, Label } from '../../components/ui/input';
+import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from '../../components/ui/dialog';
+import { DataTable } from '../../components/admin/data-table';
+import { AdminPageHeader } from '../../components/admin/admin-header';
+import { TableSkeleton } from '../../components/ui/skeleton';
+
+const BACKEND = 'http://localhost:8080';
 
 const DoctorManagement = () => {
-  const [doctors, setDoctors] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: doctors, loading, refetch } = useDataFetch('/admin/doctors');
   const [showModal, setShowModal] = useState(false);
   const [editDoctor, setEditDoctor] = useState(null);
-  const [search, setSearch] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const [form, setForm] = useState({ name: '', specialization: '', phone: '', email: '', bio: '', imageUrl: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    name: '', specialization: '', phone: '', email: '', bio: '', imageUrl: ''
+  });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
-  useEffect(() => { fetchDoctors(); }, []);
-
-  const fetchDoctors = async () => {
-    try { const res = await api.get('/admin/doctors'); setDoctors(res.data); }
-    catch (err) { console.error(err); }
-    finally { setLoading(false); }
+  const openCreateModal = () => {
+    setEditDoctor(null);
+    setForm({ name: '', specialization: '', phone: '', email: '', bio: '', imageUrl: '' });
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setShowModal(true);
   };
 
-  const openCreateModal = () => { setEditDoctor(null); setForm({ name: '', specialization: '', phone: '', email: '', bio: '', imageUrl: '' }); setShowModal(true); };
-  const openEditModal = (d) => { setEditDoctor(d); setForm({ name: d.name||'', specialization: d.specialization||'', phone: d.phone||'', email: d.email||'', bio: d.bio||'', imageUrl: d.imageUrl||'' }); setShowModal(true); };
+  const openEditModal = (d) => {
+    setEditDoctor(d);
+    setForm({
+      name: d.name || '', specialization: d.specialization || '',
+      phone: d.phone || '', email: d.email || '',
+      bio: d.bio || '', imageUrl: d.imageUrl || ''
+    });
+    setPhotoFile(null);
+    setPhotoPreview(d.imageUrl ? `${BACKEND}${d.imageUrl}` : null);
+    setShowModal(true);
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
-      if (editDoctor) await api.put(`/admin/doctors/${editDoctor.id}`, form);
-      else await api.post('/admin/doctors', form);
-      setShowModal(false); fetchDoctors();
-    } catch (err) { alert(err.response?.data?.name || err.response?.data?.message || 'Failed'); }
+      let savedDoctor;
+      if (editDoctor) {
+        const res = await api.put(`/admin/doctors/${editDoctor.id}`, form);
+        savedDoctor = res.data;
+        toast.success('Doctor updated successfully');
+      } else {
+        const res = await api.post('/admin/doctors', form);
+        savedDoctor = res.data;
+        toast.success('Doctor added successfully');
+      }
+
+      setShowModal(false);
+      refetch();
+
+      // Upload photo async in background with loading toast
+      if (photoFile) {
+        const toastId = toast.loading('Uploading photo...');
+        try {
+          const formData = new FormData();
+          formData.append('file', photoFile);
+          const token = localStorage.getItem('token');
+          await axios.post(
+            `http://localhost:8080/api/admin/doctors/${savedDoctor.id}/photo`,
+            formData,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          toast.success('Photo uploaded!', { id: toastId });
+          refetch();
+        } catch {
+          toast.error('Photo upload failed. Re-upload via Edit.', { id: toastId });
+        }
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Operation failed');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Deactivate this doctor?')) return;
-    try { await api.delete(`/admin/doctors/${id}`); fetchDoctors(); } catch (err) { console.error(err); }
+    try {
+      await api.delete(`/admin/doctors/${id}`);
+      toast.success('Doctor deactivated');
+      refetch();
+    } catch {
+      toast.error('Failed to deactivate doctor');
+    }
   };
 
-  const filtered = doctors.filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.specialization.toLowerCase().includes(search.toLowerCase()));
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const columns = [
+    {
+      key: 'name',
+      header: 'Doctor',
+      render: (doc) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center shrink-0 overflow-hidden">
+            {doc.imageUrl ? (
+              <img src={`${BACKEND}${doc.imageUrl}`} alt={doc.name} className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <Stethoscope className="h-4 w-4 text-secondary" />
+            )}
+          </div>
+          <div>
+            <p className="font-medium text-foreground">{doc.name}</p>
+            <p className="text-xs text-muted-foreground">{doc.email || '—'}</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'specialization',
+      header: 'Specialization',
+      render: (doc) => <Badge variant="default">{doc.specialization}</Badge>
+    },
+    {
+      key: 'phone',
+      header: 'Phone',
+      render: (doc) => <span className="text-muted-foreground">{doc.phone || '—'}</span>
+    },
+    {
+      key: 'active',
+      header: 'Status',
+      render: (doc) => (
+        <Badge variant={doc.active ? 'success' : 'destructive'}>
+          {doc.active ? 'Active' : 'Inactive'}
+        </Badge>
+      )
+    },
+  ];
 
-  if (loading) return <div className="flex justify-center h-64 items-center"><div className="h-8 w-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" /></div>;
+  if (loading) return <TableSkeleton columns={5} rows={6} />;
 
   return (
     <div>
-      {/* Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <p className="text-sm text-muted-foreground">{doctors.length} total doctors</p>
-        </div>
-        <button onClick={openCreateModal} className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-          <Plus className="h-4 w-4" /> Add Doctor
-        </button>
-      </div>
+      <AdminPageHeader
+        description={`${doctors.length} total doctors`}
+        actions={
+          <Button onClick={openCreateModal}>
+            <Plus className="h-4 w-4" /> Add Doctor
+          </Button>
+        }
+      />
 
-      {/* Search */}
-      <div className="mb-4 max-w-sm relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} placeholder="Search doctors..." className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/50" />
-      </div>
-
-      {/* Table */}
-      <div className="border border-border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Specialization</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Phone</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {paginated.map((doc) => (
-                <tr key={doc.id} className="bg-card hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-foreground">{doc.name}</td>
-                  <td className="px-4 py-3 text-sm text-foreground">{doc.specialization}</td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{doc.phone || '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${doc.active ? 'bg-secondary/10 text-secondary' : 'bg-destructive/10 text-destructive'}`}>
-                      {doc.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button onClick={() => openEditModal(doc)} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors mr-1"><Pencil className="h-4 w-4" /></button>
-                    <button onClick={() => handleDelete(doc.id)} className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"><Trash2 className="h-4 w-4" /></button>
-                  </td>
-                </tr>
-              ))}
-              {paginated.length === 0 && <tr><td colSpan="5" className="py-12 text-center text-muted-foreground">No doctors found</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-muted-foreground">Showing {(currentPage-1)*itemsPerPage+1} to {Math.min(currentPage*itemsPerPage, filtered.length)} of {filtered.length}</p>
-          <div className="flex items-center gap-1">
-            <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage===1} className="h-8 w-8 flex items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"><ChevronLeft className="h-4 w-4" /></button>
-            <span className="px-3 text-sm">Page {currentPage} of {totalPages}</span>
-            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage===totalPages} className="h-8 w-8 flex items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"><ChevronRight className="h-4 w-4" /></button>
+      <DataTable
+        data={doctors}
+        columns={columns}
+        searchKeys={['name', 'specialization']}
+        searchPlaceholder="Search doctors..."
+        emptyTitle="No doctors found"
+        emptyDescription="Add your first doctor to get started."
+        emptyIcon={Stethoscope}
+        actions={(doc) => (
+          <div className="flex items-center justify-end gap-1">
+            <Button variant="ghost" size="icon" onClick={() => openEditModal(doc)} className="h-8 w-8 text-muted-foreground hover:text-primary">
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => handleDelete(doc.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
-        </div>
-      )}
+        )}
+      />
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <h2 className="text-lg font-semibold text-foreground">{editDoctor ? 'Edit Doctor' : 'Add Doctor'}</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"><X className="h-4 w-4" /></button>
+      <Dialog open={showModal} onClose={() => setShowModal(false)}>
+        <DialogHeader onClose={() => setShowModal(false)}>
+          <DialogTitle>{editDoctor ? 'Edit Doctor' : 'Add Doctor'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <DialogBody className="space-y-4">
+
+            {/* Photo Upload */}
+            <div className="flex flex-col items-center gap-3">
+              <div
+                className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden cursor-pointer border-2 border-dashed border-border hover:border-primary transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Preview" className="w-full h-full object-cover rounded-full" />
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                    <Camera className="h-6 w-6" />
+                    <span className="text-xs">Photo</span>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                {photoPreview ? 'Change Photo' : 'Upload Photo'}
+              </Button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+
+            <div>
+              <Label>Name *</Label>
+              <Input value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} required placeholder="Dr. Full Name" />
+            </div>
+            <div>
+              <Label>Specialization *</Label>
+              <Input value={form.specialization} onChange={(e) => setForm({...form, specialization: e.target.value})} required placeholder="e.g. Cardiologist" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Name *</label>
-                <input value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} required className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/50" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Specialization *</label>
-                <input value={form.specialization} onChange={(e) => setForm({...form, specialization: e.target.value})} required className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/50" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Phone</label>
-                  <input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/50" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
-                  <input value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/50" />
-                </div>
+                <Label>Phone</Label>
+                <Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} placeholder="+91 9876543210" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Bio</label>
-                <textarea value={form.bio} onChange={(e) => setForm({...form, bio: e.target.value})} rows="3" className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/50 resize-none" />
+                <Label>Email</Label>
+                <Input value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} type="email" placeholder="doctor@email.com" />
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">{editDoctor ? 'Update' : 'Create'}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+            <div>
+              <Label>Bio</Label>
+              <Textarea value={form.bio} onChange={(e) => setForm({...form, bio: e.target.value})} rows={3} placeholder="Brief professional background..." />
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setShowModal(false)} className="flex-1">Cancel</Button>
+            <Button type="submit" disabled={submitting} className="flex-1">
+              {submitting ? 'Saving...' : editDoctor ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Dialog>
     </div>
   );
 };

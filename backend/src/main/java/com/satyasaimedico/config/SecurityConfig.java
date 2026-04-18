@@ -74,6 +74,8 @@ public class SecurityConfig {
 
             // ── URL Authorization Rules ──
             .authorizeHttpRequests(auth -> auth
+                // ── PUBLIC: Static uploaded files (doctor photos, etc.) ──
+                .requestMatchers("/uploads/**").permitAll()
                 // ── PUBLIC: Authentication endpoints ──
                 .requestMatchers("/api/auth/**").permitAll()
 
