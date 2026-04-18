@@ -90,7 +90,7 @@ const Doctors = () => {
                         <div className="flex items-center gap-4">
                           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform overflow-hidden">
                             {doc.imageUrl ? (
-                              <img src={`http://localhost:8080${doc.imageUrl}`} alt={doc.doctorName} className="w-full h-full rounded-full object-cover" />
+                              <img src={doc.imageUrl} alt={doc.doctorName} className="w-full h-full rounded-full object-cover" />
                             ) : (
                               <Stethoscope className="h-6 w-6 text-primary" />
                             )}
@@ -125,7 +125,7 @@ const Doctors = () => {
                   <Card key={doctor.id} className="overflow-hidden hover:shadow-lg hover:border-primary/20 transition-all group">
                     <div className="h-40 bg-muted flex items-center justify-center overflow-hidden">
                       {doctor.imageUrl ? (
-                        <img src={`http://localhost:8080${doctor.imageUrl}`} alt={doctor.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <img src={doctor.imageUrl} alt={doctor.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       ) : (
                         <Stethoscope className="h-10 w-10 text-muted-foreground/30" />
                       )}
