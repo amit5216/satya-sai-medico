@@ -27,11 +27,11 @@
 ### Public Pages
 | Home | Services | Doctors |
 |------|----------|---------|
-| ![Home](screenshots/home.png) | ![Services](screenshots/services.png) | ![Doctors](screenshots/doctors.png) |
+| ![Home](screenshots/home.png) | ![Services](screenshots/Services.png) | ![Doctors](screenshots/doctors.png) |
 
 | Medicines | Appointment (OTP) | Contact |
 |-----------|-------------------|---------|
-| ![Medicines](screenshots/medicines.png) | ![Appointment](screenshots/appointment.png) | ![Contact](screenshots/contact.png) |
+| ![Medicines](screenshots/medicines.png) | ![Appointment](screenshots/appointment.png) | ![Contact](screenshots/Contact.png) |
 
 ### Admin Panel
 | Login | Dashboard | Doctor Management |
