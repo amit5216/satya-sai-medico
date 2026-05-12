@@ -7,29 +7,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-/**
- * ============================================================
- * DATA SEEDER — Seeds initial data on application startup
- * ============================================================
- *
- * 🎓 WHAT IS CommandLineRunner?
- * It's a Spring interface with a single method: run().
- * Spring calls run() AUTOMATICALLY after the application starts.
- * Perfect for seeding initial data, running setup tasks, etc.
- *
- * 🎓 WHY WE NEED THIS:
- * When the application starts for the first time, there are
- * NO admin users in the database. You can't login to create an admin
- * because you need to be logged in to create one (chicken-and-egg problem).
- *
- * Solution: Automatically create a default admin on first startup.
- *
- * 🎓 INTERVIEW: "How do you handle initial setup?"
- * → "We use a CommandLineRunner that checks if any admin exists.
- *    If not, it creates a default admin with BCrypt-hashed password.
- *    This runs only on first startup. The password should be changed
- *    immediately in production."
- */
+
 @Component
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
