@@ -136,51 +136,6 @@ satya-sai-medico/
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-- **Java** 21+
-- **Node.js** 18+
-- **MySQL** 8+
-
-### 1. Clone & Database Setup
-```bash
-git clone https://github.com/YOUR_USERNAME/satya-sai-medico.git
-cd satya-sai-medico
-```
-
-```sql
-CREATE DATABASE satya_sai_medico;
-```
-
-### 2. Backend Setup
-```bash
-cd backend
-
-# Copy example config and fill in your MySQL password
-cp src/main/resources/application.properties.example src/main/resources/application.properties
-
-# Run
-./mvnw spring-boot:run
-# Server starts at http://localhost:8080
-```
-
-### 3. Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-# App opens at http://localhost:5173
-```
-
-### 4. Login to Admin Panel
-Navigate to `http://localhost:5173/admin/login`
-```
-Username: admin
-Password: admin123
-```
-
----
 
 ## 🔐 API Endpoints (22+)
 
