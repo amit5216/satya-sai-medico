@@ -14,30 +14,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-/**
- * ============================================================
- * SECURITY CONFIGURATION (PRODUCTION-READY)
- * ============================================================
- *
- * 🎓 HOW SPRING SECURITY WORKS:
- * Every HTTP request goes through a "Security Filter Chain":
- *
- *   Request → CORS → JWT Filter → Auth Check → Controller
- *
- * This class configures:
- * 1. Which URLs are PUBLIC (anyone can access)
- * 2. Which URLs need AUTHENTICATION (valid JWT required)
- * 3. Which URLs need specific ROLES (e.g., only ADMIN)
- * 4. Where our custom JWT filter sits in the chain
- *
- * 🎓 INTERVIEW: "Explain your Spring Security configuration"
- * → "We use a stateless, JWT-based security configuration.
- *    CSRF is disabled because we're a REST API using tokens, not cookies.
- *    Public endpoints like /api/doctors are open to everyone.
- *    Admin endpoints like /api/admin/** require a valid JWT token
- *    with the ADMIN role. Our custom JwtAuthenticationFilter runs
- *    before Spring's default filter to extract and validate tokens."
- */
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -46,20 +23,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorsConfigurationSource corsConfigurationSource;
 
-    /**
-     * SecurityFilterChain — the heart of Spring Security.
-     *
-     * 🎓 Rule Order MATTERS:
-     * Spring Security evaluates rules TOP to BOTTOM.
-     * More specific rules must come BEFORE general rules.
-     *
-     *   ✅ /api/auth/** → permitAll (FIRST — specific)
-     *   ✅ /api/admin/** → authenticated (SECOND — specific)
-     *   ✅ /api/** → permitAll (LAST — catch-all)
-     *
-     *   ❌ /api/** → permitAll (FIRST — everything matches this!)
-     *   ❌ /api/admin/** → authenticated (UNREACHABLE — already matched above)
-     */
+    
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -121,18 +85,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * Password encoder for hashing passwords.
-     *
-     * 🎓 BCrypt internals:
-     * 1. Generates a random SALT (16 bytes)
-     * 2. Combines salt + password
-     * 3. Runs through Blowfish cipher 2^10 times (cost factor 10)
-     * 4. Produces: $2a$10$SALT_22_CHARS.HASH_31_CHARS
-     *
-     * Each hash is UNIQUE even for the same password (different salt each time).
-     * This defeats rainbow table attacks.
-     */
+   
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
